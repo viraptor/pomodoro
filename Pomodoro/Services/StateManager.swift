@@ -9,6 +9,14 @@ class StateManager: ObservableObject {
     /// Current application settings
     @Published var settings: AppSettings = AppSettings.defaultSettings
     
+    /// Indicates whether the timer is currently running
+    @Published private(set) var isTimerRunning = false
+    
+    /// Remaining time in the current session (in seconds)
+    var remainingTime: TimeInterval {
+        timerService.remainingTime
+    }
+    
     /// Timer service that manages timing functionality
     private let timerService: TimerService
     
@@ -24,6 +32,13 @@ class StateManager: ObservableObject {
         timerService.timerCompletedPublisher
             .sink { [weak self] _ in
                 self?.handleTimerCompleted()
+            }
+            .store(in: &cancellables)
+        
+        // Subscribe to timer running state changes
+        timerService.$isRunning
+            .sink { [weak self] isRunning in
+                self?.isTimerRunning = isRunning
             }
             .store(in: &cancellables)
         
