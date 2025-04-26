@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// View for the menu bar dropdown
 struct MenuBarView: View {
@@ -191,9 +192,34 @@ struct MenuBarView: View {
         }
         .padding(10)
         .frame(width: 250)
-        .sheet(isPresented: $showingConfiguration) {
-            ConfigurationView(stateManager: stateManager)
+        .onChange(of: showingConfiguration) { newValue in
+            if newValue {
+                openConfigurationWindow()
+                // Reset the state immediately after scheduling window opening
+                showingConfiguration = false
+            }
         }
+    }
+    
+    /// Opens a standalone configuration window
+    private func openConfigurationWindow() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 500),
+            styleMask: [.titled, .closable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Pomodoro Configuration"
+        window.center()
+        
+        // Prevent window from releasing when closed, which would terminate the app
+        window.isReleasedWhenClosed = false
+        
+        window.contentView = NSHostingView(rootView: 
+            ConfigurationView(stateManager: stateManager)
+        )
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
     
     /// Progress percentage for the current timer session

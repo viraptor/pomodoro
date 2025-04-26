@@ -7,11 +7,21 @@
 
 import SwiftUI
 import UserNotifications
+import AppKit
+
+// A shared coordinator object to pass state between App and AppDelegate
+class AppCoordinator {
+    static let shared = AppCoordinator()
+    var stateManager: StateManager?
+}
 
 @main
 struct PomodoroApp: App {
     /// The state manager that coordinates the application state
     @StateObject private var stateManager = StateManager()
+    
+    // Create an instance of AppDelegate to prevent app from closing when all windows are closed
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     init() {
         // Ensure UNUserNotificationCenter delegate is set
@@ -19,6 +29,9 @@ struct PomodoroApp: App {
         
         // Set up application termination observer
         setupTerminationObserver()
+        
+        // Store the stateManager in the shared coordinator for the AppDelegate to access
+        AppCoordinator.shared.stateManager = stateManager
     }
     
     var body: some Scene {

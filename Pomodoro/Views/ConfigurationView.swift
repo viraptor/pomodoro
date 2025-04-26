@@ -1,11 +1,12 @@
 import SwiftUI
+import AppKit
 
 /// View for configuring Pomodoro app settings
 struct ConfigurationView: View {
     /// Reference to the state manager
     @ObservedObject var stateManager: StateManager
     
-    /// Environment variable to dismiss the view
+    /// Environment variable to dismiss the view (used when in sheet presentation)
     @Environment(\.dismiss) private var dismiss
     
     /// Local copy of settings for editing
@@ -55,9 +56,15 @@ struct ConfigurationView: View {
                     .padding()
             }
             
+            // Note about how to close the window
+            Text("Click Save or Cancel to close this window")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.horizontal)
+            
             HStack {
                 Button("Cancel") {
-                    dismiss()
+                    closeWindow()
                 }
                 .keyboardShortcut(.cancelAction)
                 
@@ -66,7 +73,7 @@ struct ConfigurationView: View {
                 Button("Save") {
                     if validateSettings() {
                         saveSettings()
-                        dismiss()
+                        closeWindow()
                     }
                 }
                 .keyboardShortcut(.defaultAction)
@@ -77,21 +84,48 @@ struct ConfigurationView: View {
         .frame(width: 500, height: 500)
     }
     
+    /// Close the current window
+    private func closeWindow() {
+        // Try to find the window and close it
+        if let window = NSApplication.shared.windows.first(where: { ($0.contentView as? NSHostingView<ConfigurationView>) != nil }) {
+            window.close()
+        } else {
+            // Fall back to dismiss environment if not found
+            dismiss()
+        }
+    }
+    
     /// The settings tab
     var settingsTab: some View {
         Form {
             Section(header: Text("Session Duration")) {
-                Stepper("Work: \(workDuration) minutes", value: $workDuration, in: 1...60)
-                    .help("Duration of work sessions (1-60 minutes)")
+                HStack {
+                    Text("Work:")
+                    TextField("", value: $workDuration, formatter: NumberFormatter())
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 50)
+                    Text("minutes")
+                    Stepper("", value: $workDuration, in: 1...60)
+                        .labelsHidden()
+                }
+                .help("Duration of work sessions (1-60 minutes)")
                 
-                Stepper("Rest: \(restDuration) minutes", value: $restDuration, in: 1...30)
-                    .help("Duration of rest sessions (1-30 minutes)")
+                HStack {
+                    Text("Rest:")
+                    TextField("", value: $restDuration, formatter: NumberFormatter())
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 50)
+                    Text("minutes")
+                    Stepper("", value: $restDuration, in: 1...30)
+                        .labelsHidden()
+                }
+                .help("Duration of rest sessions (1-30 minutes)")
             }
             
             Section(header: Text("Active Hours")) {
                 HStack {
                     Text("Start: ")
-                    Picker("\(activeHoursStart):00", selection: $activeHoursStart) {
+                    Picker("", selection: $activeHoursStart) {
                         ForEach(0..<24) { hour in
                             Text("\(hour):00").tag(hour)
                         }
@@ -103,7 +137,7 @@ struct ConfigurationView: View {
                 
                 HStack {
                     Text("End: ")
-                    Picker("\(activeHoursEnd):00", selection: $activeHoursEnd) {
+                    Picker("", selection: $activeHoursEnd) {
                         ForEach(0..<24) { hour in
                             Text("\(hour):00").tag(hour)
                         }
@@ -323,6 +357,9 @@ struct ConfigurationView: View {
     
     /// Validate the settings before saving
     private func validateSettings() -> Bool {
+        // Clear any previous validation errors
+        showValidationError = false
+        
         // Validate work duration
         if workDuration < 1 || workDuration > 60 {
             showValidationError = true
@@ -357,7 +394,6 @@ struct ConfigurationView: View {
             return false
         }
         
-        showValidationError = false
         return true
     }
     
