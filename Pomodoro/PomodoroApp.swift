@@ -45,8 +45,9 @@ struct PomodoroApp: App {
                         .foregroundStyle(stateColor)
                         .symbolEffect(.bounce, value: stateManager.isTimerRunning)
                     
-                    Text(stateManager.formattedRemainingTime)
-                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    Text(formatMonospaceDigits(stateManager.formattedRemainingTime))
+                        .font(.system(size: 12, weight: .medium))
+                        .frame(width: 80, alignment: .center)
                         .foregroundStyle(stateColor)
                 }
             } else {
@@ -80,6 +81,19 @@ struct PomodoroApp: App {
         case .rest:
             return .green
         }
+    }
+    
+    /// Converts regular digits to Unicode monospace digits
+    private func formatMonospaceDigits(_ text: String) -> String {
+        let monospaceDigits = ["𝟶", "𝟷", "𝟸", "𝟹", "𝟺", "𝟻", "𝟼", "𝟽", "𝟾", "𝟿"]
+        
+        return text.map { char in
+            if let digit = Int(String(char)) {
+                return monospaceDigits[digit]
+            } else {
+                return String(char)
+            }
+        }.joined()
     }
 }
 
