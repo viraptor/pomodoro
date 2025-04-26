@@ -26,6 +26,9 @@ class StateManager: ObservableObject {
     /// Notification service for system notifications
     private let notificationService: NotificationService
     
+    /// Statistics manager for tracking work sessions
+    private let statisticsManager: StatisticsManager
+    
     /// Timer for idle reminders
     private var idleReminderTimer: Timer?
     
@@ -37,12 +40,15 @@ class StateManager: ObservableObject {
     ///   - timerService: The timer service to use
     ///   - soundService: The sound service to use
     ///   - notificationService: The notification service to use
+    ///   - statisticsManager: The statistics manager to use
     init(timerService: TimerService = TimerService(),
          soundService: SoundService = SoundService(),
-         notificationService: NotificationService = NotificationService()) {
+         notificationService: NotificationService = NotificationService(),
+         statisticsManager: StatisticsManager = StatisticsManager()) {
         self.timerService = timerService
         self.soundService = soundService
         self.notificationService = notificationService
+        self.statisticsManager = statisticsManager
         
         // Subscribe to timer completion events
         timerService.timerCompletedPublisher
@@ -82,6 +88,9 @@ class StateManager: ObservableObject {
         currentState = .work
         timerService.start(duration: settings.workDurationSeconds)
         
+        // Start tracking the work session
+        statisticsManager.startWorkSession()
+        
         // Clear any idle reminders when starting work
         idleReminderTimer?.invalidate()
         notificationService.removePendingNotifications(ofType: .idleReminder)
@@ -89,6 +98,9 @@ class StateManager: ObservableObject {
     
     /// Start a rest session
     private func startRest() {
+        // Complete the work session tracking
+        statisticsManager.completeWorkSession()
+        
         // Play work complete sound and show notification
         soundService.playSound(type: .workComplete)
         notificationService.notifyWorkComplete()
@@ -171,6 +183,16 @@ class StateManager: ObservableObject {
         let minutes = Int(timerService.remainingTime) / 60
         let seconds = Int(timerService.remainingTime) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+    
+    /// Access to today's statistics
+    var todayStats: DailyStatistics? {
+        statisticsManager.todayStats
+    }
+    
+    /// Access to all statistics
+    var allStats: [DailyStatistics] {
+        statisticsManager.dailyStats
     }
     
     deinit {

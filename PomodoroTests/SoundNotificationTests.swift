@@ -42,7 +42,7 @@ final class SoundNotificationTests: XCTestCase {
         // but that would require more complex test infrastructure
     }
     
-    func testActiveHoursLogic() {
+    func testActiveHoursConfiguration() {
         // Create mock services with a test configuration
         let timerService = TimerService()
         let soundService = SoundService()
@@ -55,15 +55,13 @@ final class SoundNotificationTests: XCTestCase {
             notificationService: notificationService
         )
         
-        // Test the isWithinActiveHours method through reflection
-        // This is a hack for testing private methods, not generally recommended
-        let isWithinActiveHoursMethod = stateManager.perform(
-            Selector(("isWithinActiveHours"))
-        )
+        // Test that we can set and get active hours settings
+        var settings = stateManager.settings
+        settings.activeHoursStart = 9 // 9 AM
+        settings.activeHoursEnd = 17 // 5 PM
+        stateManager.settings = settings
         
-        // If the method exists and returns a value, we consider the test passed
-        XCTAssertNotNil(isWithinActiveHoursMethod)
-        
-        // For a more comprehensive test, we'd need to mock the calendar and time
+        XCTAssertEqual(stateManager.settings.activeHoursStart, 9)
+        XCTAssertEqual(stateManager.settings.activeHoursEnd, 17)
     }
 } 
