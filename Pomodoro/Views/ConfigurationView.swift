@@ -14,6 +14,10 @@ struct ConfigurationView: View {
     @State private var activeHoursStart: Int
     @State private var activeHoursEnd: Int
     
+    /// State for tracking validation errors
+    @State private var showValidationError = false
+    @State private var validationErrorMessage = ""
+    
     init(stateManager: StateManager) {
         self.stateManager = stateManager
         _workDuration = State(initialValue: stateManager.settings.workDuration)
@@ -31,13 +35,43 @@ struct ConfigurationView: View {
             Form {
                 Section(header: Text("Session Duration")) {
                     Stepper("Work: \(workDuration) minutes", value: $workDuration, in: 1...60)
+                        .help("Duration of work sessions (1-60 minutes)")
+                    
                     Stepper("Rest: \(restDuration) minutes", value: $restDuration, in: 1...30)
+                        .help("Duration of rest sessions (1-30 minutes)")
                 }
                 
                 Section(header: Text("Active Hours")) {
-                    Stepper("Start: \(activeHoursStart):00", value: $activeHoursStart, in: 0...23)
-                    Stepper("End: \(activeHoursEnd):00", value: $activeHoursEnd, in: 0...23)
+                    HStack {
+                        Text("Start: ")
+                        Picker("\(activeHoursStart):00", selection: $activeHoursStart) {
+                            ForEach(0..<24) { hour in
+                                Text("\(hour):00").tag(hour)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .frame(width: 100)
+                    }
+                    .help("Start time for active hours (when reminders will be sent)")
+                    
+                    HStack {
+                        Text("End: ")
+                        Picker("\(activeHoursEnd):00", selection: $activeHoursEnd) {
+                            ForEach(0..<24) { hour in
+                                Text("\(hour):00").tag(hour)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .frame(width: 100)
+                    }
+                    .help("End time for active hours (when reminders will be sent)")
                 }
+            }
+            
+            if showValidationError {
+                Text(validationErrorMessage)
+                    .foregroundColor(.red)
+                    .padding()
             }
             
             HStack {
@@ -49,14 +83,56 @@ struct ConfigurationView: View {
                 Spacer()
                 
                 Button("Save") {
-                    saveSettings()
-                    dismiss()
+                    if validateSettings() {
+                        saveSettings()
+                        dismiss()
+                    }
                 }
                 .keyboardShortcut(.defaultAction)
             }
             .padding()
         }
-        .frame(width: 400, height: 400)
+        .frame(width: 400, height: 450)
+    }
+    
+    /// Validate the settings before saving
+    private func validateSettings() -> Bool {
+        // Validate work duration
+        if workDuration < 1 || workDuration > 60 {
+            showValidationError = true
+            validationErrorMessage = "Work duration must be between 1 and 60 minutes."
+            return false
+        }
+        
+        // Validate rest duration
+        if restDuration < 1 || restDuration > 30 {
+            showValidationError = true
+            validationErrorMessage = "Rest duration must be between 1 and 30 minutes."
+            return false
+        }
+        
+        // Validate active hours
+        if activeHoursStart < 0 || activeHoursStart > 23 {
+            showValidationError = true
+            validationErrorMessage = "Start hour must be between 0 and 23."
+            return false
+        }
+        
+        if activeHoursEnd < 0 || activeHoursEnd > 23 {
+            showValidationError = true
+            validationErrorMessage = "End hour must be between 0 and 23."
+            return false
+        }
+        
+        // Validate active hours range makes sense
+        if activeHoursStart >= activeHoursEnd {
+            showValidationError = true
+            validationErrorMessage = "Start hour must be before end hour."
+            return false
+        }
+        
+        showValidationError = false
+        return true
     }
     
     /// Save the settings to the state manager
@@ -67,9 +143,7 @@ struct ConfigurationView: View {
         newSettings.activeHoursStart = activeHoursStart
         newSettings.activeHoursEnd = activeHoursEnd
         
-        if newSettings.isValid() {
-            stateManager.settings = newSettings
-            stateManager.saveSettings()
-        }
+        stateManager.settings = newSettings
+        stateManager.saveSettings()
     }
 } 
