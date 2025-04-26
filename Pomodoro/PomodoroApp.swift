@@ -6,11 +6,17 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 @main
 struct PomodoroApp: App {
     /// The state manager that coordinates the application state
     @StateObject private var stateManager = StateManager()
+    
+    init() {
+        // Ensure UNUserNotificationCenter delegate is set
+        UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+    }
     
     var body: some Scene {
         MenuBarExtra {
@@ -77,5 +83,16 @@ struct PomodoroApp: App {
         case .rest:
             return .green
         }
+    }
+}
+
+/// Delegate to handle notifications when the app is in the foreground
+class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = NotificationDelegate()
+    
+    /// Handle notifications when the app is in the foreground
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // Allow banner and sound even when app is in foreground
+        completionHandler([.banner, .sound])
     }
 }

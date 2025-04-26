@@ -20,13 +20,29 @@ class StateManager: ObservableObject {
     /// Timer service that manages timing functionality
     private let timerService: TimerService
     
+    /// Sound service for playing alerts
+    private let soundService: SoundService
+    
+    /// Notification service for system notifications
+    private let notificationService: NotificationService
+    
+    /// Timer for idle reminders
+    private var idleReminderTimer: Timer?
+    
     /// Set of cancellables for managing subscriptions
     private var cancellables = Set<AnyCancellable>()
     
-    /// Initialize the state manager with a timer service
-    /// - Parameter timerService: The timer service to use
-    init(timerService: TimerService = TimerService()) {
+    /// Initialize the state manager with required services
+    /// - Parameters:
+    ///   - timerService: The timer service to use
+    ///   - soundService: The sound service to use
+    ///   - notificationService: The notification service to use
+    init(timerService: TimerService = TimerService(),
+         soundService: SoundService = SoundService(),
+         notificationService: NotificationService = NotificationService()) {
         self.timerService = timerService
+        self.soundService = soundService
+        self.notificationService = notificationService
         
         // Subscribe to timer completion events
         timerService.timerCompletedPublisher
@@ -44,6 +60,9 @@ class StateManager: ObservableObject {
         
         // Load settings from UserDefaults
         loadSettings()
+        
+        // Setup idle reminder timer
+        setupIdleReminderTimer()
     }
     
     /// Advance to the next state in the Pomodoro cycle
@@ -62,23 +81,74 @@ class StateManager: ObservableObject {
     private func startWork() {
         currentState = .work
         timerService.start(duration: settings.workDurationSeconds)
+        
+        // Clear any idle reminders when starting work
+        idleReminderTimer?.invalidate()
+        notificationService.removePendingNotifications(ofType: .idleReminder)
     }
     
     /// Start a rest session
     private func startRest() {
+        // Play work complete sound and show notification
+        soundService.playSound(type: .workComplete)
+        notificationService.notifyWorkComplete()
+        
         currentState = .rest
         timerService.start(duration: settings.restDurationSeconds)
     }
     
     /// Return to idle state
     private func startIdle() {
+        // Play rest complete sound and show notification
+        soundService.playSound(type: .restComplete)
+        notificationService.notifyRestComplete()
+        
         currentState = .idle
         timerService.pause()
+        
+        // Setup idle reminder timer when returning to idle
+        setupIdleReminderTimer()
     }
     
     /// Handle timer completion based on current state
     private func handleTimerCompleted() {
         advance()
+    }
+    
+    /// Setup the idle reminder timer
+    private func setupIdleReminderTimer() {
+        // Only set up if we're in idle state
+        guard currentState == .idle else { return }
+        
+        // Cancel any existing timer
+        idleReminderTimer?.invalidate()
+        
+        // Idle reminder interval (30 minutes = 1800 seconds)
+        let reminderInterval: TimeInterval = 1800
+        
+        // Setup a new timer
+        idleReminderTimer = Timer.scheduledTimer(withTimeInterval: reminderInterval, repeats: true) { [weak self] _ in
+            self?.handleIdleReminderTick()
+        }
+    }
+    
+    /// Handle idle reminder timer tick
+    private func handleIdleReminderTick() {
+        // Only send reminders during active hours
+        if isWithinActiveHours() && currentState == .idle {
+            soundService.playSound(type: .reminder)
+            notificationService.notifyIdleReminder(timeToNextReminder: 1800)
+        }
+    }
+    
+    /// Check if the current time is within active hours
+    /// - Returns: True if within active hours, false otherwise
+    private func isWithinActiveHours() -> Bool {
+        let calendar = Calendar.current
+        let now = Date()
+        let hour = calendar.component(.hour, from: now)
+        
+        return hour >= settings.activeHoursStart && hour < settings.activeHoursEnd
     }
     
     /// Save current settings to UserDefaults
@@ -101,5 +171,9 @@ class StateManager: ObservableObject {
         let minutes = Int(timerService.remainingTime) / 60
         let seconds = Int(timerService.remainingTime) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+    
+    deinit {
+        idleReminderTimer?.invalidate()
     }
 } 
