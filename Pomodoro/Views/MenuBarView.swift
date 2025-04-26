@@ -141,6 +141,44 @@ struct MenuBarView: View {
             
             Divider()
             
+            // Today's Statistics Summary
+            if let todayStats = stateManager.todayStats, todayStats.completedSessionsCount > 0 {
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack {
+                        Image(systemName: "chart.bar.fill")
+                            .foregroundStyle(.blue)
+                        Text("Today's Progress")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    .padding(.horizontal, 5)
+                    
+                    HStack(spacing: 10) {
+                        Label("\(todayStats.completedSessionsCount)", systemImage: "checkmark.circle")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        
+                        Label(todayStats.formattedTotalWorkTime, systemImage: "timer")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 5)
+                    
+                    Button(action: {
+                        showingConfiguration = true
+                    }) {
+                        Text("View Details")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 5)
+                    .padding(.top, 2)
+                }
+                .padding(.vertical, 5)
+                
+                Divider()
+            }
+            
             // Quit button
             Button(action: {
                 NSApplication.shared.terminate(nil)

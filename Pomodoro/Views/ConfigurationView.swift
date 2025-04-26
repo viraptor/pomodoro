@@ -146,6 +146,25 @@ struct ConfigurationView: View {
                     .padding()
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(8)
+                    
+                    // Add visualization of today's work sessions
+                    if !todayStats.sessions.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Today's Sessions")
+                                .font(.subheadline)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(todayStats.sessions) { session in
+                                        SessionView(session: session)
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                            }
+                            .frame(height: 70)
+                        }
+                        .padding(.top, 8)
+                    }
                 }
                 .padding()
             } else {
@@ -162,20 +181,136 @@ struct ConfigurationView: View {
                     .font(.headline)
                     .padding(.horizontal)
                 
-                List {
-                    ForEach(stateManager.allStats.prefix(7)) { dailyStat in
-                        HStack {
-                            Text(formatDate(dailyStat.date))
-                            Spacer()
-                            Text("\(dailyStat.completedSessionsCount) sessions")
-                            Spacer()
-                            Text(dailyStat.formattedTotalWorkTime)
+                // Enhanced historical statistics view
+                if !stateManager.allStats.isEmpty {
+                    VStack(spacing: 12) {
+                        // Weekly summary chart
+                        WeeklyStatsView(stats: stateManager.allStats.prefix(7))
+                            .frame(height: 160)
+                            .padding(.horizontal)
+                        
+                        Divider()
+                        
+                        // Daily breakdown list
+                        List {
+                            ForEach(stateManager.allStats.prefix(7)) { dailyStat in
+                                HStack {
+                                    Text(formatDate(dailyStat.date))
+                                        .fontWeight(.medium)
+                                    Spacer()
+                                    Text("\(dailyStat.completedSessionsCount) sessions")
+                                    Spacer()
+                                    Text(dailyStat.formattedTotalWorkTime)
+                                        .foregroundColor(.blue)
+                                }
+                            }
                         }
+                        .listStyle(PlainListStyle())
+                    }
+                } else {
+                    Text("No historical data available yet")
+                        .foregroundColor(.secondary)
+                        .padding()
+                }
+            }
+        }
+    }
+    
+    /// Visual representation of a single work session
+    struct SessionView: View {
+        let session: WorkSession
+        
+        var body: some View {
+            VStack(alignment: .leading, spacing: 4) {
+                // Session duration
+                Text(formattedDuration(session.duration))
+                    .font(.system(.caption, design: .monospaced))
+                    .fontWeight(.medium)
+                
+                // Time visualization
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.red.opacity(0.2))
+                        .frame(width: 60, height: 10)
+                    
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.red)
+                        .frame(width: min(60, 60 * min(session.duration / 3600, 1)), height: 10)
+                }
+                
+                // Start time
+                Text(formatTime(session.startTime))
+                    .font(.system(.caption2, design: .monospaced))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(Color.gray.opacity(0.05))
+            .cornerRadius(6)
+        }
+        
+        private func formatTime(_ date: Date) -> String {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "HH:mm"
+            return formatter.string(from: date)
+        }
+        
+        private func formattedDuration(_ duration: TimeInterval) -> String {
+            let minutes = Int(duration) / 60
+            return "\(minutes) min"
+        }
+    }
+    
+    /// Weekly statistics visualization
+    struct WeeklyStatsView: View {
+        let stats: Array<DailyStatistics>.SubSequence
+        
+        var body: some View {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Weekly Focus Time")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                HStack(alignment: .bottom, spacing: 4) {
+                    ForEach(Array(stats.enumerated()), id: \.element.id) { index, stat in
+                        VStack {
+                            // Bar height based on work time (max 8 hours = 28800 seconds)
+                            let height = CGFloat(stat.totalWorkTime / 28800.0 * 100)
+                            
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.blue.opacity(0.7))
+                                .frame(height: max(4, height))
+                            
+                            Text(formatShortDate(stat.date))
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
                 }
-                .frame(height: 200)
-                .listStyle(PlainListStyle())
+                .padding(.top, 10)
+                
+                Text("7-day total: \(formatTotalTime(totalWeeklyTime))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
             }
+        }
+        
+        private var totalWeeklyTime: TimeInterval {
+            stats.reduce(0) { $0 + $1.totalWorkTime }
+        }
+        
+        private func formatShortDate(_ date: Date) -> String {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "E"
+            return formatter.string(from: date)
+        }
+        
+        private func formatTotalTime(_ time: TimeInterval) -> String {
+            let hours = Int(time) / 3600
+            let minutes = (Int(time) % 3600) / 60
+            return "\(hours)h \(minutes)m"
         }
     }
     

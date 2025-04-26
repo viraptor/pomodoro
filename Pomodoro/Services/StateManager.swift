@@ -195,6 +195,15 @@ class StateManager: ObservableObject {
         statisticsManager.dailyStats
     }
     
+    /// Manually complete and save any in-progress statistics (for app termination)
+    func completeStatistics() {
+        // Only need to complete statistics if we're currently in work state
+        if currentState == .work {
+            statisticsManager.completeWorkSession()
+            statisticsManager.saveStatistics()
+        }
+    }
+    
     deinit {
         idleReminderTimer?.invalidate()
     }

@@ -16,6 +16,9 @@ struct PomodoroApp: App {
     init() {
         // Ensure UNUserNotificationCenter delegate is set
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+        
+        // Set up application termination observer
+        setupTerminationObserver()
     }
     
     var body: some Scene {
@@ -94,5 +97,27 @@ class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         // Allow banner and sound even when app is in foreground
         completionHandler([.banner, .sound])
+    }
+}
+
+extension PomodoroApp {
+    /// Set up observer for app termination to ensure statistics are saved
+    private func setupTerminationObserver() {
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main) { _ in
+                // Save any pending statistics data before shutdown
+                self.saveStatisticsBeforeTermination()
+            }
+    }
+    
+    /// Ensure all statistics are properly saved before app exits
+    private func saveStatisticsBeforeTermination() {
+        // If in work state, complete the current session
+        if stateManager.currentState == .work {
+            // End current work session and save statistics
+            stateManager.completeStatistics()
+        }
     }
 }
