@@ -150,4 +150,9 @@ class StatisticsManager: ObservableObject {
     func resetStatistics() {
         dailyStats = []
     }
+    
+    /// Set daily statistics (primarily for testing)
+    func setDailyStats(_ stats: [DailyStatistics]) {
+        dailyStats = stats
+    }
 } 

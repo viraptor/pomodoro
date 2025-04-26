@@ -8,7 +8,7 @@ final class StatisticsTests: XCTestCase {
         super.setUp()
         statisticsManager = StatisticsManager()
         // Clear any existing stats for clean tests
-        statisticsManager.dailyStats = []
+        statisticsManager.resetStatistics()
     }
     
     override func tearDown() {
@@ -53,7 +53,7 @@ final class StatisticsTests: XCTestCase {
         let session = WorkSession(startTime: startTime, endTime: endTime)
         
         // Add the session directly to statistics manager
-        statisticsManager.dailyStats = [DailyStatistics(date: today, sessions: [session])]
+        statisticsManager.setDailyStats([DailyStatistics(date: today, sessions: [session])])
         
         XCTAssertNotNil(statisticsManager.todayStats, "Today stats should be available")
         XCTAssertEqual(statisticsManager.todayStats?.completedSessionsCount, 1, "Should have one completed session today")
