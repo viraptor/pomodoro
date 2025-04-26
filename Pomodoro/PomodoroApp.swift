@@ -38,40 +38,21 @@ struct PomodoroApp: App {
         MenuBarExtra {
             MenuBarView(stateManager: stateManager)
         } label: {
-            Label {
-                if stateManager.currentState != .idle {
-                    HStack(spacing: 4) {
-                        // Circle indicator with pulsing animation for active state
-                        Circle()
-                            .fill(stateColor)
-                            .frame(width: 8, height: 8)
-                            .opacity(stateManager.isTimerRunning ? 1.0 : 0.5)
-                            .animation(.easeInOut(duration: 1.0).repeatForever(), value: stateManager.isTimerRunning)
-                        
-                        // Timer display with monospaced font
-                        Text(stateManager.formattedRemainingTime)
-                            .font(.system(.body, design: .monospaced))
-                            .foregroundStyle(stateColor)
-                            .fontWeight(.medium)
-                            .help(stateManager.currentState.description)
-                    }
-                } else {
-                    Text("Ready")
-                        .font(.system(.body, design: .rounded))
-                        .foregroundStyle(.secondary)
-                        .help("Timer is idle. Click to start.")
+            if stateManager.currentState != .idle {
+                HStack(spacing: 2) {
+                    Image(systemName: menuBarIcon)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(stateColor)
+                        .symbolEffect(.bounce, value: stateManager.isTimerRunning)
+                    
+                    Text(stateManager.formattedRemainingTime)
+                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .foregroundStyle(stateColor)
                 }
-            } icon: {
+            } else {
                 Image(systemName: menuBarIcon)
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(stateColor)
-                    // Add pulsing effect when less than a minute remains
-                    .symbolEffect(.pulse, options: .repeating, value: stateManager.isTimerRunning && stateManager.remainingTimePublished < 60)
-                    // Add bounce effect when timer is running
-                    .symbolEffect(.bounce, value: stateManager.isTimerRunning)
-                    // Add scale effect for additional emphasis based on state
-                    .scaleEffect(stateManager.currentState == .idle ? 1.0 : 1.1)
-                    .help("\(stateManager.currentState.description): \(stateManager.formattedRemainingTime)")
             }
         }
         .menuBarExtraStyle(.window)
