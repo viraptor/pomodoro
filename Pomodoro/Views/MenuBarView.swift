@@ -68,8 +68,8 @@ struct MenuBarView: View {
                             .foregroundStyle(stateColor)
                             .fontWeight(.medium)
                             // Add visual alert when time is low
-                            .opacity(stateManager.remainingTime < 10 ? 0.6 + 0.4 * sin(Double(Date().timeIntervalSince1970) * 4) : 1.0)
-                            .animation(.easeInOut(duration: 0.5), value: stateManager.remainingTime < 10)
+                            .opacity(stateManager.remainingTimePublished < 10 ? 0.6 + 0.4 * sin(Double(Date().timeIntervalSince1970) * 4) : 1.0)
+                            .animation(.easeInOut(duration: 0.5), value: stateManager.remainingTimePublished < 10)
                         
                         // Enhanced progress bar with segments for better visual feedback
                         GeometryReader { geometry in
@@ -207,7 +207,7 @@ struct MenuBarView: View {
             return 0
         }
         
-        let remaining = Double(stateManager.remainingTime)
+        let remaining = Double(stateManager.remainingTimePublished)
         return max(0, min(1, (total - remaining) / total))
     }
     

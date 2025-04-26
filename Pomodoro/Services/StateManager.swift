@@ -12,6 +12,9 @@ class StateManager: ObservableObject {
     /// Indicates whether the timer is currently running
     @Published private(set) var isTimerRunning = false
     
+    /// Published remaining time to ensure UI updates
+    @Published private(set) var remainingTimePublished: TimeInterval = 0
+    
     /// Remaining time in the current session (in seconds)
     var remainingTime: TimeInterval {
         timerService.remainingTime
@@ -63,6 +66,13 @@ class StateManager: ObservableObject {
                 self?.isTimerRunning = isRunning
             }
             .store(in: &cancellables)
+            
+        // Subscribe to timer tick events to update remaining time
+        timerService.timerTickPublisher
+            .sink { [weak self] _ in
+                self?.remainingTimePublished = self?.timerService.remainingTime ?? 0
+            }
+            .store(in: &cancellables)
         
         // Load settings from UserDefaults
         loadSettings()
@@ -87,6 +97,7 @@ class StateManager: ObservableObject {
     private func startWork() {
         currentState = .work
         timerService.start(duration: settings.workDurationSeconds)
+        remainingTimePublished = settings.workDurationSeconds
         
         // Start tracking the work session
         statisticsManager.startWorkSession()
@@ -107,6 +118,7 @@ class StateManager: ObservableObject {
         
         currentState = .rest
         timerService.start(duration: settings.restDurationSeconds)
+        remainingTimePublished = settings.restDurationSeconds
     }
     
     /// Return to idle state
@@ -180,8 +192,8 @@ class StateManager: ObservableObject {
     
     /// Return formatted remaining time string
     var formattedRemainingTime: String {
-        let minutes = Int(timerService.remainingTime) / 60
-        let seconds = Int(timerService.remainingTime) % 60
+        let minutes = Int(remainingTimePublished) / 60
+        let seconds = Int(remainingTimePublished) % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
     

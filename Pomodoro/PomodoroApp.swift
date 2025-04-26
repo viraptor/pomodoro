@@ -53,7 +53,7 @@ struct PomodoroApp: App {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(stateColor)
                     // Add pulsing effect when less than a minute remains
-                    .symbolEffect(.pulse, options: .repeating, value: stateManager.isTimerRunning && stateManager.remainingTime < 60)
+                    .symbolEffect(.pulse, options: .repeating, value: stateManager.isTimerRunning && stateManager.remainingTimePublished < 60)
                     // Add bounce effect when timer is running
                     .symbolEffect(.bounce, value: stateManager.isTimerRunning)
                     // Add scale effect for additional emphasis based on state
