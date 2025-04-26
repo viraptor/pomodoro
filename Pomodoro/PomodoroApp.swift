@@ -17,13 +17,29 @@ struct PomodoroApp: App {
             MenuBarView(stateManager: stateManager)
         } label: {
             Label {
-                Text(stateManager.formattedRemainingTime)
-                    .font(.system(.body, design: .monospaced))
+                if stateManager.currentState != .idle {
+                    Text(stateManager.formattedRemainingTime)
+                        .font(.system(.body, design: .monospaced))
+                        .help(stateManager.currentState.description)
+                }
             } icon: {
-                Image(systemName: stateManager.currentState == .idle ? "timer" :
-                                stateManager.currentState == .work ? "timer.circle.fill" : "timer.circle")
+                Image(systemName: menuBarIcon)
+                    .symbolRenderingMode(.hierarchical)
+                    .help("\(stateManager.currentState.description): \(stateManager.formattedRemainingTime)")
             }
         }
         .menuBarExtraStyle(.window)
+    }
+    
+    /// Returns the appropriate icon for the current state
+    private var menuBarIcon: String {
+        switch stateManager.currentState {
+        case .idle:
+            return "timer"
+        case .work:
+            return "timer.circle.fill"
+        case .rest:
+            return "timer.circle"
+        }
     }
 }
