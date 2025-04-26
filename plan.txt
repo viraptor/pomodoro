@@ -1,0 +1,177 @@
+# Pomodoro Timer Application Specification
+
+## Overview
+A Pomodoro timer application that helps users manage work and rest periods. The app will have a menu bar presence with a dropdown for control and configuration, and will track usage statistics.
+
+## Implementation Stages
+
+### Stage 1: Basic Application Structure and State Management
+1. Set up macOS SwiftUI project with the following structure:
+   - Models: `PomodoroState.swift` (enum: Idle, Work, Rest), `AppSettings.swift`
+   - Services: `TimerService.swift`, `StateManager.swift`
+   - Views: `ConfigurationView.swift`, `MenuBarView.swift`
+   - App: `PomodoroApp.swift`
+
+2. Implement state management system:
+   - Create `StateManager` class with current state property and state transition methods
+   - Implement state change publishers using Combine framework
+   - Add methods for advancing states with proper transitions (Idle → Work → Rest → Idle)
+
+3. Create basic timer functionality:
+   - Implement `TimerService` with start, pause, reset methods
+   - Add countdown logic and elapsed time tracking
+   - Create publishers for timer tick and completion events
+
+4. Unit tests:
+   - Test state transitions (advance from each state correctly)
+   - Test timer accuracy and events
+   - Test state manager and timer service integration
+
+### Stage 2: Menu Bar Integration
+1. Implement menu bar functionality:
+   - Create a custom NSStatusItem implementation
+   - Add support for displaying both icon and text in the menu bar
+   - Set up menu bar item with dynamic updates
+
+2. Create menu dropdown infrastructure:
+   - Design menu structure with dynamic "Advance State" text based on current state:
+     - When Idle: "Start Work"
+     - When Work: "Take a Break"
+     - When Rest: "End Break"
+   - Add static "Configuration" menu option
+   - Add Exit application option
+
+3. Implement menu callback handlers:
+   - Connect "Advance State" to state manager's advance method
+   - Create scaffolding for configuration window launch
+   - Implement proper cleanup on exit
+
+4. Unit tests:
+   - Test menu text changes based on state changes
+   - Test menu callbacks trigger appropriate actions
+   - Test menu bar icon and text display methods
+
+### Stage 3: Timer Functionality and Display
+1. Enhance timer display in menu bar:
+   - Implement remaining time display next to menu bar icon
+   - Use monospace font for time display
+   - Format display as MM:SS
+
+2. Complete state management logic:
+   - Finalize state transition implementation
+   - Connect timer events to state changes
+   - Implement automatic transitions at timer completion
+
+3. Add menu bar icon visual indicators:
+   - Design different icons for each state (Idle, Work, Rest)
+   - Update icon when state changes
+
+4. Unit tests:
+   - Test time format display
+   - Test automatic state transitions on timer completion
+   - Test icon changes with state transitions
+
+### Stage 4: Configuration Window
+1. Design configuration window UI:
+   - Create SwiftUI layout with input fields for:
+     - Work duration (minutes)
+     - Rest duration (minutes) 
+     - Active hours start time
+     - Active hours end time
+   - Add save and cancel buttons
+
+2. Implement configuration binding:
+   - Create `AppSettings` struct to store settings
+   - Implement SwiftUI bindings to configuration fields
+   - Add validation for inputs
+
+3. Create settings persistence:
+   - Implement methods to save settings using UserDefaults
+   - Add loading of settings on application startup
+   - Create default values (Work: 25min, Rest: 5min, Hours: 9-17)
+
+4. Unit tests:
+   - Test configuration saving and loading
+   - Test validation of inputs
+   - Test application of settings to timer functionality
+
+### Stage 5: Sound and Notification System
+1. Implement sound playback:
+   - Add sound resources to the project
+   - Create `SoundService` for playing "ding" sound using AVFoundation
+   - Connect sound playback to end of work and rest states
+
+2. Create notification system:
+   - Implement UserNotifications framework integration
+   - Create state completion notifications
+   - Add notification text specific to each state transition
+
+3. Implement idle state reminders:
+   - Create background timer for tracking idle time
+   - Add logic to check if current time is within active hours
+   - Implement half-hour check for reminders during idle state
+   - Create reminder notification with call-to-action
+
+4. Unit tests:
+   - Test sound playback on state completion
+   - Test notification generation and display
+   - Test idle reminder timing logic
+   - Test active hours functionality
+
+### Stage 6: Usage Statistics Tracking
+1. Design statistics data model:
+   - Create `WorkSession` struct to track completed sessions
+   - Implement `DailyStatistics` to aggregate by date
+   - Add properties for date, count, total time
+
+2. Implement statistics collection:
+   - Add observers for completed work sessions
+   - Create methods to record session completion
+   - Implement daily aggregation of statistics
+
+3. Create persistence layer:
+   - Design file format for statistics storage using Codable
+   - Implement methods to save to user's application support directory
+   - Add loading of historical statistics on startup
+
+4. Add statistics reporting:
+   - Create simple statistics view in configuration window
+   - Display current day's completed sessions
+   - Show basic historical summary
+
+5. Unit tests:
+   - Test session recording accuracy
+   - Test persistence and loading of statistics
+   - Test aggregation and reporting functionality
+
+### Stage 7: Polish and Integration
+1. Enhance user experience:
+   - Refine menu bar icon design for better visibility
+   - Improve notification messages
+   - Add hover text to menu bar icon with current state info
+
+2. Implement system integration:
+   - Add option to start at login using ServiceManagement framework
+   - Implement proper application lifecycle management
+   - Add graceful shutdown with statistics saving
+
+3. Create comprehensive error handling:
+   - Add do-catch blocks for error-prone operations
+   - Implement logging for errors
+   - Create user-friendly error messages
+
+4. Final testing:
+   - End-to-end integration tests
+   - Performance testing for long-running sessions
+   - User acceptance testing
+
+## Technical Requirements
+- Swift 5.5+ and SwiftUI for macOS
+- MenuBarExtra menu bar functionality
+- UserDefaults and Codable for persistence
+- AVFoundation for sound playback
+- UserNotifications framework for notifications
+- Combine framework for reactive programming
+- XCTest for unit testing
+
+Each stage should be implemented sequentially, with unit tests created for the functionality added in that stage before moving on to the next stage. The dynamic labeling of the "Advance State" menu item will provide intuitive context for the user about what action they're taking.
