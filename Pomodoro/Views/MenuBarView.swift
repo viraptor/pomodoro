@@ -17,6 +17,10 @@ struct MenuBarView: View {
                                     stateManager.currentState == .work ? "timer.circle.fill" : "timer.circle")
                         .imageScale(.large)
                         .foregroundStyle(stateColor)
+                        // Conditionally apply the bounce effect only when timer is running
+                        .if(stateManager.isTimerRunning) { view in
+                            view.symbolEffect(.bounce.byLayer)
+                        }
                     
                     Text(stateManager.currentState.description)
                         .font(.headline)
@@ -25,19 +29,28 @@ struct MenuBarView: View {
                     Spacer()
                     
                     if stateManager.currentState != .idle {
-                        // Pulsing activity indicator
+                        // Enhanced pulsing activity indicator with animation
                         if stateManager.isTimerRunning {
-                            Circle()
-                                .fill(stateColor)
-                                .frame(width: 8, height: 8)
-                                .opacity(0.8)
-                                .overlay {
+                            ZStack {
+                                Circle()
+                                    .fill(stateColor)
+                                    .frame(width: 8, height: 8)
+                                    .opacity(0.8)
+                                
+                                // Add ripple effect
+                                ForEach(0..<3, id: \.self) { index in
                                     Circle()
                                         .stroke(stateColor, lineWidth: 1)
-                                        .scaleEffect(stateManager.isTimerRunning ? 1.5 : 1.0)
+                                        .scaleEffect(stateManager.isTimerRunning ? 1.5 + CGFloat(index) * 0.3 : 1.0)
                                         .opacity(stateManager.isTimerRunning ? 0 : 1)
-                                        .animation(.easeOut(duration: 1.0).repeatForever(autoreverses: false), value: stateManager.isTimerRunning)
+                                        .animation(
+                                            .easeOut(duration: 1.5)
+                                                .repeatForever(autoreverses: false)
+                                                .delay(Double(index) * 0.3),
+                                            value: stateManager.isTimerRunning
+                                        )
                                 }
+                            }
                         } else {
                             Image(systemName: "pause.circle")
                                 .foregroundStyle(.secondary)
@@ -46,28 +59,52 @@ struct MenuBarView: View {
                 }
                 .padding(.horizontal, 5)
                 
-                // Timer display
+                // Enhanced timer display
                 if stateManager.currentState != .idle {
                     VStack(spacing: 2) {
+                        // Timer display with larger font
                         Text(stateManager.formattedRemainingTime)
                             .font(.system(.title, design: .monospaced))
                             .foregroundStyle(stateColor)
                             .fontWeight(.medium)
+                            // Add visual alert when time is low
+                            .opacity(stateManager.remainingTime < 10 ? 0.6 + 0.4 * sin(Double(Date().timeIntervalSince1970) * 4) : 1.0)
+                            .animation(.easeInOut(duration: 0.5), value: stateManager.remainingTime < 10)
                         
-                        // Progress bar
+                        // Enhanced progress bar with segments for better visual feedback
                         GeometryReader { geometry in
                             ZStack(alignment: .leading) {
-                                Rectangle()
+                                // Background track
+                                RoundedRectangle(cornerRadius: 2)
                                     .foregroundStyle(Color.secondary.opacity(0.2))
                                     .frame(width: geometry.size.width, height: 4)
                                 
-                                Rectangle()
+                                // Progress fill
+                                RoundedRectangle(cornerRadius: 2)
                                     .foregroundStyle(stateColor)
                                     .frame(width: max(0, min(geometry.size.width * progressPercentage, geometry.size.width)), height: 4)
+                                
+                                // Segment markers (showing 25% increments)
+                                HStack(spacing: 0) {
+                                    ForEach(1..<4) { segment in
+                                        Rectangle()
+                                            .fill(Color.white.opacity(0.5))
+                                            .frame(width: 1, height: 6)
+                                            .offset(y: -1)
+                                            .position(x: geometry.size.width * CGFloat(segment) / 4, y: 2)
+                                    }
+                                }
+                                .frame(width: geometry.size.width)
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 2))
                         }
                         .frame(height: 4)
+                        
+                        // Show additional info about current session
+                        Text(progressDescription)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 2)
                     }
                     .padding(.horizontal, 5)
                 }
@@ -136,6 +173,18 @@ struct MenuBarView: View {
         return max(0, min(1, (total - remaining) / total))
     }
     
+    /// Textual description of the progress
+    private var progressDescription: String {
+        let percentage = Int(progressPercentage * 100)
+        if stateManager.currentState == .work {
+            return "Focus session: \(percentage)% complete"
+        } else if stateManager.currentState == .rest {
+            return "Break time: \(percentage)% complete"
+        } else {
+            return ""
+        }
+    }
+    
     /// Returns the appropriate color for the current state
     private var stateColor: Color {
         switch stateManager.currentState {
@@ -145,6 +194,17 @@ struct MenuBarView: View {
             return .red
         case .rest:
             return .green
+        }
+    }
+}
+
+// Extension to add conditional modifier support
+extension View {
+    @ViewBuilder func `if`<Content: View>(_ condition: Bool, content: (Self) -> Content) -> some View {
+        if condition {
+            content(self)
+        } else {
+            self
         }
     }
 } 
