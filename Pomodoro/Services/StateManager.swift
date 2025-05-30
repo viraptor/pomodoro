@@ -104,6 +104,7 @@ class StateManager: ObservableObject {
         
         // Clear any idle reminders when starting work
         idleReminderTimer?.invalidate()
+        idleReminderTimer = nil
         notificationService.removePendingNotifications(ofType: .idleReminder)
     }
     
@@ -146,6 +147,7 @@ class StateManager: ObservableObject {
         
         // Cancel any existing timer
         idleReminderTimer?.invalidate()
+        idleReminderTimer = nil
         
         // Idle reminder interval (30 minutes = 1800 seconds)
         let reminderInterval: TimeInterval = 1800
