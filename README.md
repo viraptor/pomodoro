@@ -1,5 +1,7 @@
 # Pomodoro Timer
 
+Everything vibe coded. Use at your own risk.
+
 A macOS Pomodoro timer application to help manage work and rest periods effectively. This app features a menu bar presence for easy control and configuration, along with usage statistics tracking.
 
 ## Features
