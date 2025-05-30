@@ -33,7 +33,7 @@ class StateManager: ObservableObject {
     private let statisticsManager: StatisticsManager
     
     /// Timer for idle reminders
-    private var idleReminderTimer: Timer?
+    var idleReminderTimer: Timer?
     
     /// Set of cancellables for managing subscriptions
     private var cancellables = Set<AnyCancellable>()
